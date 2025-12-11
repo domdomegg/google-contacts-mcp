@@ -2,6 +2,20 @@
 
 MCP server for Google Contacts - list, search, and manage contacts.
 
+## Use Cases
+
+**Email lookup**: "See the latest JIRA ticket that's come in. Can we email Sarah from the security team to get their input?" → finds Sarah's email and drafts the message.
+
+**Business card capture**: After a networking event, snap photos of business cards → your assistant extracts the details and adds them as contacts with a note about where you met.
+
+**Find connections**: "Who do I know at Google?" or "I'm visiting London next week - who should I catch up with?" → search your personal network.
+
+**Call reminder**: "Remind me to call Mike at 3pm" → creates a calendar event with Mike's phone number attached so you can dial straight from the reminder.
+
+**Contact updates**: You receive an out-of-office saying someone left their company with a new personal email → your assistant updates their contact automatically.
+
+(These are just examples - any workflow that needs contact lookup or management can use this.)
+
 ## Setup
 
 ### 1. Create Google OAuth credentials
