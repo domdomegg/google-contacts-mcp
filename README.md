@@ -29,7 +29,7 @@ The server runs on `http://localhost:3000` by default. Change with `PORT=3001`.
 ### 3. Add to your MCP client
 
 ```bash
-claude mcp add google-contacts-mcp http://localhost:3000/mcp
+claude mcp add --transport http google-contacts-mcp http://localhost:3000/mcp
 ```
 
 ## Architecture
