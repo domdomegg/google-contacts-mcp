@@ -3,8 +3,9 @@ import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import type {Config} from './types.js';
 import {makePeopleApiCall} from '../utils/contacts-api.js';
 import {jsonResult} from '../utils/response.js';
+import {strictSchemaWithAliases} from '../utils/schema.js';
 
-const inputSchema = {
+const inputSchema = strictSchemaWithAliases({
 	resourceName: z.string().describe('The resource name of the contact to update (e.g., "people/c12345")'),
 	etag: z.string().describe('The etag from the contact (required to prevent conflicts)'),
 	givenName: z.string().optional().describe('First name'),
@@ -20,7 +21,7 @@ const inputSchema = {
 	organization: z.string().optional().describe('Company/organization name'),
 	jobTitle: z.string().optional().describe('Job title'),
 	notes: z.string().optional().describe('Notes about the contact'),
-};
+}, {});
 
 const outputSchema = z.object({
 	resourceName: z.string(),

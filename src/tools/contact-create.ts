@@ -3,8 +3,9 @@ import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import type {Config} from './types.js';
 import {makePeopleApiCall} from '../utils/contacts-api.js';
 import {jsonResult} from '../utils/response.js';
+import {strictSchemaWithAliases} from '../utils/schema.js';
 
-const inputSchema = {
+const inputSchema = strictSchemaWithAliases({
 	givenName: z.string().optional().describe('First name'),
 	familyName: z.string().optional().describe('Last name'),
 	emailAddresses: z.array(z.object({
@@ -18,7 +19,7 @@ const inputSchema = {
 	organization: z.string().optional().describe('Company/organization name'),
 	jobTitle: z.string().optional().describe('Job title'),
 	notes: z.string().optional().describe('Notes about the contact'),
-};
+}, {});
 
 const outputSchema = z.object({
 	resourceName: z.string(),
