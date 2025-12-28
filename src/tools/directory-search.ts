@@ -3,12 +3,13 @@ import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import type {Config} from './types.js';
 import {makePeopleApiCall} from '../utils/contacts-api.js';
 import {jsonResult} from '../utils/response.js';
+import {strictSchemaWithAliases} from '../utils/schema.js';
 
-const inputSchema = {
+const inputSchema = strictSchemaWithAliases({
 	query: z.string().describe('Search query - matches against names, email addresses, and phone numbers'),
 	pageSize: z.number().min(1).max(500).default(10).describe('Maximum number of results'),
 	pageToken: z.string().optional().describe('Page token for pagination'),
-};
+}, {});
 
 const personSchema = z.object({
 	resourceName: z.string(),
