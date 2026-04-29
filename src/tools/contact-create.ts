@@ -10,11 +10,11 @@ const inputSchema = strictSchemaWithAliases({
 	familyName: z.string().optional().describe('Last name'),
 	emailAddresses: z.array(z.object({
 		value: z.string().describe('Email address'),
-		type: z.enum(['home', 'work', 'other']).optional().describe('Type of email'),
+		type: z.string().optional().describe('Type of email. Predefined values are "home", "work", or "other"; any other string is treated as a custom label.'),
 	})).optional().describe('Email addresses'),
 	phoneNumbers: z.array(z.object({
 		value: z.string().describe('Phone number'),
-		type: z.enum(['home', 'work', 'mobile', 'other']).optional().describe('Type of phone'),
+		type: z.string().optional().describe('Type of phone. Predefined values are "home", "work", "mobile", "homeFax", "workFax", "otherFax", "pager", "workMobile", "workPager", "main", "googleVoice", or "other"; any other string is treated as a custom label.'),
 	})).optional().describe('Phone numbers'),
 	organization: z.string().optional().describe('Company/organization name'),
 	jobTitle: z.string().optional().describe('Job title'),
