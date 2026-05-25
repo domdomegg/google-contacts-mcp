@@ -22,6 +22,11 @@ export function registerContactDelete(server: McpServer, config: Config): void {
 			description: 'Permanently delete a contact from Google Contacts.',
 			inputSchema,
 			outputSchema,
+			annotations: {
+				readOnlyHint: false,
+				destructiveHint: true,
+				idempotentHint: true,
+			},
 		},
 		async ({resourceName}) => {
 			await makePeopleApiCall('DELETE', `/${resourceName}:deleteContact`, config.token);

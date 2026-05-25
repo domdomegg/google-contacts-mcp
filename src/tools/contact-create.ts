@@ -47,6 +47,11 @@ export function registerContactCreate(server: McpServer, config: Config): void {
 			description: 'Create a new contact in Google Contacts.',
 			inputSchema,
 			outputSchema,
+			annotations: {
+				readOnlyHint: false,
+				destructiveHint: false,
+				idempotentHint: false,
+			},
 		},
 		async ({givenName, familyName, emailAddresses, phoneNumbers, organization, jobTitle, notes}) => {
 			const person: Record<string, unknown> = {};

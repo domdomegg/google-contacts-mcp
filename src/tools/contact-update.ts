@@ -49,6 +49,11 @@ export function registerContactUpdate(server: McpServer, config: Config): void {
 			description: 'Update an existing contact. Use contact_get first to retrieve the current etag.',
 			inputSchema,
 			outputSchema,
+			annotations: {
+				readOnlyHint: false,
+				destructiveHint: true,
+				idempotentHint: true,
+			},
 		},
 		async ({resourceName, etag, givenName, familyName, emailAddresses, phoneNumbers, organization, jobTitle, notes}) => {
 			const person: Record<string, unknown> = {etag};
