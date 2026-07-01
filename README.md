@@ -66,7 +66,7 @@ The server holds no tokens or state - it just proxies OAuth to Google.
 
 | Tool | Description |
 |------|-------------|
-| `contacts_list` | List contacts with names, emails, phones, organizations, and birthdays |
+| `contacts_list` | List contacts with names, emails, phones, organizations, birthdays, and URLs |
 | `contacts_search` | Search contacts by name, email, or phone |
 | `directory_search` | Search organization directory for coworkers |
 | `contact_get` | Get detailed info for a single contact |

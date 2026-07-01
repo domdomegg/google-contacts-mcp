@@ -37,6 +37,10 @@ const personSchema = z.object({
 			day: z.number().optional(),
 		}).optional(),
 	})).optional(),
+	urls: z.array(z.object({
+		value: z.string().optional(),
+		type: z.string().optional(),
+	})).optional(),
 	photos: z.array(z.object({
 		url: z.string().optional(),
 	})).optional(),
@@ -63,7 +67,7 @@ export function registerContactSearch(server: McpServer, config: Config): void {
 		async ({query, pageSize}) => {
 			const params = new URLSearchParams();
 			params.set('query', query);
-			params.set('readMask', 'names,emailAddresses,phoneNumbers,organizations,birthdays,photos');
+			params.set('readMask', 'names,emailAddresses,phoneNumbers,organizations,birthdays,urls,photos');
 			params.set('pageSize', String(pageSize));
 
 			const result = await makePeopleApiCall('GET', `/people:searchContacts?${params.toString()}`, config.token);

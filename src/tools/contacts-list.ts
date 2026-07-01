@@ -38,6 +38,10 @@ const personSchema = z.object({
 			day: z.number().optional(),
 		}).optional(),
 	})).optional(),
+	urls: z.array(z.object({
+		value: z.string().optional(),
+		type: z.string().optional(),
+	})).optional(),
 	photos: z.array(z.object({
 		url: z.string().optional(),
 	})).optional(),
@@ -55,7 +59,7 @@ export function registerContactsList(server: McpServer, config: Config): void {
 		'contacts_list',
 		{
 			title: 'List contacts',
-			description: 'List contacts from the user\'s Google Contacts. Returns names, emails, phone numbers, organizations, and birthdays.',
+			description: 'List contacts from the user\'s Google Contacts. Returns names, emails, phone numbers, organizations, birthdays, and URLs.',
 			inputSchema,
 			outputSchema,
 			annotations: {
@@ -64,7 +68,7 @@ export function registerContactsList(server: McpServer, config: Config): void {
 		},
 		async ({pageSize, pageToken, sortOrder}) => {
 			const params = new URLSearchParams();
-			params.set('personFields', 'names,emailAddresses,phoneNumbers,organizations,birthdays,photos');
+			params.set('personFields', 'names,emailAddresses,phoneNumbers,organizations,birthdays,urls,photos');
 			params.set('pageSize', String(pageSize));
 
 			if (pageToken) {

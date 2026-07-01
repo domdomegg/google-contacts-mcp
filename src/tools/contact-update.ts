@@ -21,6 +21,10 @@ const inputSchema = strictSchemaWithAliases({
 	organization: z.string().optional().describe('Company/organization name'),
 	jobTitle: z.string().optional().describe('Job title'),
 	notes: z.string().optional().describe('Notes about the contact'),
+	urls: z.array(z.object({
+		value: z.string().describe('URL'),
+		type: z.string().optional().describe('Type of URL. Predefined values are "home", "work", "other", "homePage", "blog", "profile", "ftp", or "reservations"; any other string is treated as a custom label.'),
+	})).optional().describe('URLs (replaces existing)'),
 	birthday: z.object({
 		year: z.number().optional().describe('Year (omit if unknown)'),
 		month: z.number().min(1).max(12).describe('Month (1-12)'),
@@ -51,6 +55,10 @@ const outputSchema = z.object({
 			day: z.number().optional(),
 		}).optional(),
 	})).optional(),
+	urls: z.array(z.object({
+		value: z.string().optional(),
+		type: z.string().optional(),
+	})).optional(),
 }).passthrough();
 
 export function registerContactUpdate(server: McpServer, config: Config): void {
@@ -67,7 +75,7 @@ export function registerContactUpdate(server: McpServer, config: Config): void {
 				idempotentHint: true,
 			},
 		},
-		async ({resourceName, etag, givenName, familyName, emailAddresses, phoneNumbers, organization, jobTitle, notes, birthday}) => {
+		async ({resourceName, etag, givenName, familyName, emailAddresses, phoneNumbers, organization, jobTitle, notes, urls, birthday}) => {
 			const person: Record<string, unknown> = {etag};
 			const updatePersonFields: string[] = [];
 
@@ -94,6 +102,11 @@ export function registerContactUpdate(server: McpServer, config: Config): void {
 			if (notes !== undefined) {
 				person.biographies = [{value: notes, contentType: 'TEXT_PLAIN'}];
 				updatePersonFields.push('biographies');
+			}
+
+			if (urls !== undefined) {
+				person.urls = urls;
+				updatePersonFields.push('urls');
 			}
 
 			if (birthday !== undefined) {
