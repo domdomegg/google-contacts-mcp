@@ -23,11 +23,31 @@ const inputSchema = strictSchemaWithAliases({
 		value: z.string().describe('URL'),
 		type: z.string().optional().describe('Type of URL. Predefined values are "home", "work", "other", "homePage", "blog", "profile", "ftp", or "reservations"; any other string is treated as a custom label (e.g. "LinkedIn" for a LinkedIn profile).'),
 	})).optional().describe('URLs (e.g., website, blog, social media profile)'),
+	addresses: z.array(z.object({
+		streetAddress: z.string().optional().describe('Street address'),
+		city: z.string().optional().describe('City'),
+		region: z.string().optional().describe('State/region'),
+		postalCode: z.string().optional().describe('Postal/ZIP code'),
+		country: z.string().optional().describe('Country'),
+		type: z.string().optional().describe('Type of address. Predefined values are "home", "work", or "other"; any other string is treated as a custom label.'),
+	})).optional().describe('Postal addresses'),
 	birthday: z.object({
 		year: z.number().optional().describe('Year (omit if unknown)'),
 		month: z.number().min(1).max(12).describe('Month (1-12)'),
 		day: z.number().min(1).max(31).describe('Day of month'),
 	}).optional().describe('Birthday'),
+	events: z.array(z.object({
+		date: z.object({
+			year: z.number().optional().describe('Year (omit if unknown)'),
+			month: z.number().min(1).max(12).describe('Month (1-12)'),
+			day: z.number().min(1).max(31).describe('Day of month'),
+		}).describe('Date of the event'),
+		type: z.string().optional().describe('Type of event. Predefined values are "anniversary" or "other"; any other string is treated as a custom label.'),
+	})).optional().describe('Special dates (e.g., anniversaries)'),
+	customFields: z.array(z.object({
+		key: z.string().describe('Field name/label'),
+		value: z.string().describe('Field value'),
+	})).optional().describe('Custom fields (arbitrary key-value pairs)'),
 }, {});
 
 const outputSchema = z.object({
@@ -57,6 +77,27 @@ const outputSchema = z.object({
 		value: z.string().optional(),
 		type: z.string().optional(),
 	})).optional(),
+	addresses: z.array(z.object({
+		formattedValue: z.string().optional(),
+		type: z.string().optional(),
+		streetAddress: z.string().optional(),
+		city: z.string().optional(),
+		region: z.string().optional(),
+		postalCode: z.string().optional(),
+		country: z.string().optional(),
+	})).optional(),
+	events: z.array(z.object({
+		date: z.object({
+			year: z.number().optional(),
+			month: z.number().optional(),
+			day: z.number().optional(),
+		}).optional(),
+		type: z.string().optional(),
+	})).optional(),
+	userDefined: z.array(z.object({
+		key: z.string().optional(),
+		value: z.string().optional(),
+	})).optional(),
 }).passthrough();
 
 export function registerContactCreate(server: McpServer, config: Config): void {
@@ -73,7 +114,7 @@ export function registerContactCreate(server: McpServer, config: Config): void {
 				idempotentHint: false,
 			},
 		},
-		async ({givenName, familyName, emailAddresses, phoneNumbers, organization, jobTitle, notes, urls, birthday}) => {
+		async ({givenName, familyName, emailAddresses, phoneNumbers, organization, jobTitle, notes, urls, addresses, birthday, events, customFields}) => {
 			const person: Record<string, unknown> = {};
 
 			if (givenName || familyName) {
@@ -100,8 +141,20 @@ export function registerContactCreate(server: McpServer, config: Config): void {
 				person.urls = urls;
 			}
 
+			if (addresses?.length) {
+				person.addresses = addresses;
+			}
+
 			if (birthday) {
 				person.birthdays = [{date: birthday}];
+			}
+
+			if (events?.length) {
+				person.events = events;
+			}
+
+			if (customFields?.length) {
+				person.userDefined = customFields;
 			}
 
 			const result = await makePeopleApiCall('POST', '/people:createContact', config.token, person);

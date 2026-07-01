@@ -50,9 +50,21 @@ const outputSchema = z.object({
 			day: z.number().optional(),
 		}).optional(),
 	})).optional(),
+	events: z.array(z.object({
+		date: z.object({
+			year: z.number().optional(),
+			month: z.number().optional(),
+			day: z.number().optional(),
+		}).optional(),
+		type: z.string().optional(),
+	})).optional(),
 	urls: z.array(z.object({
 		value: z.string().optional(),
 		type: z.string().optional(),
+	})).optional(),
+	userDefined: z.array(z.object({
+		key: z.string().optional(),
+		value: z.string().optional(),
 	})).optional(),
 	photos: z.array(z.object({
 		url: z.string().optional(),
@@ -78,7 +90,7 @@ export function registerContactGet(server: McpServer, config: Config): void {
 		},
 		async ({resourceName}) => {
 			const params = new URLSearchParams();
-			params.set('personFields', 'names,emailAddresses,phoneNumbers,addresses,organizations,biographies,birthdays,urls,photos,memberships');
+			params.set('personFields', 'names,emailAddresses,phoneNumbers,addresses,organizations,biographies,birthdays,events,urls,userDefined,photos,memberships');
 
 			const result = await makePeopleApiCall('GET', `/${resourceName}?${params.toString()}`, config.token);
 			return jsonResult(outputSchema.parse(result));
