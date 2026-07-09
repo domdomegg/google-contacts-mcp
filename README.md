@@ -66,13 +66,21 @@ The server holds no tokens or state - it just proxies OAuth to Google.
 
 | Tool | Description |
 |------|-------------|
-| `contacts_list` | List contacts with names, emails, phones, and organizations |
+| `contacts_list` | List contacts with names, emails, phones, organizations, birthdays, events, URLs, addresses, nicknames, relations, IM usernames, and custom fields |
 | `contacts_search` | Search contacts by name, email, or phone |
 | `directory_search` | Search organization directory for coworkers |
 | `contact_get` | Get detailed info for a single contact |
 | `contact_create` | Create a new contact |
 | `contact_update` | Update an existing contact |
 | `contact_delete` | Permanently delete a contact |
+| `contact_photo_update` | Set or replace a contact's photo |
+| `contact_photo_delete` | Remove a contact's photo |
+| `contact_groups_list` | List contact groups (labels) |
+| `contact_group_get` | Get a contact group, including its members |
+| `contact_group_create` | Create a new contact group |
+| `contact_group_update` | Rename a contact group |
+| `contact_group_delete` | Permanently delete a contact group |
+| `contact_group_members_modify` | Add or remove contacts from a contact group |
 
 ## Contributing
 

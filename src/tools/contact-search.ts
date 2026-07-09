@@ -30,8 +30,53 @@ const personSchema = z.object({
 		name: z.string().optional(),
 		title: z.string().optional(),
 	})).optional(),
+	birthdays: z.array(z.object({
+		date: z.object({
+			year: z.number().optional(),
+			month: z.number().optional(),
+			day: z.number().optional(),
+		}).optional(),
+	})).optional(),
+	events: z.array(z.object({
+		date: z.object({
+			year: z.number().optional(),
+			month: z.number().optional(),
+			day: z.number().optional(),
+		}).optional(),
+		type: z.string().optional(),
+	})).optional(),
+	urls: z.array(z.object({
+		value: z.string().optional(),
+		type: z.string().optional(),
+	})).optional(),
+	addresses: z.array(z.object({
+		formattedValue: z.string().optional(),
+		type: z.string().optional(),
+		streetAddress: z.string().optional(),
+		city: z.string().optional(),
+		region: z.string().optional(),
+		postalCode: z.string().optional(),
+		country: z.string().optional(),
+	})).optional(),
+	userDefined: z.array(z.object({
+		key: z.string().optional(),
+		value: z.string().optional(),
+	})).optional(),
 	photos: z.array(z.object({
 		url: z.string().optional(),
+	})).optional(),
+	nicknames: z.array(z.object({
+		value: z.string().optional(),
+		type: z.string().optional(),
+	})).optional(),
+	relations: z.array(z.object({
+		person: z.string().optional(),
+		type: z.string().optional(),
+	})).optional(),
+	imClients: z.array(z.object({
+		username: z.string().optional(),
+		protocol: z.string().optional(),
+		type: z.string().optional(),
 	})).optional(),
 }).passthrough();
 
@@ -56,7 +101,7 @@ export function registerContactSearch(server: McpServer, config: Config): void {
 		async ({query, pageSize}) => {
 			const params = new URLSearchParams();
 			params.set('query', query);
-			params.set('readMask', 'names,emailAddresses,phoneNumbers,organizations,photos');
+			params.set('readMask', 'names,emailAddresses,phoneNumbers,organizations,birthdays,events,urls,addresses,userDefined,photos,nicknames,relations,imClients');
 			params.set('pageSize', String(pageSize));
 
 			const result = await makePeopleApiCall('GET', `/people:searchContacts?${params.toString()}`, config.token);
