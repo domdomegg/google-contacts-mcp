@@ -16,6 +16,9 @@ import {registerContactGroupCreate} from './contact-group-create.js';
 import {registerContactGroupUpdate} from './contact-group-update.js';
 import {registerContactGroupDelete} from './contact-group-delete.js';
 import {registerContactGroupMembersModify} from './contact-group-members-modify.js';
+import {registerOtherContactsList} from './other-contacts-list.js';
+import {registerOtherContactsSearch} from './other-contacts-search.js';
+import {registerOtherContactCopyToContacts} from './other-contact-copy-to-contacts.js';
 
 export type {Config} from './types.js';
 
@@ -35,4 +38,7 @@ export function registerAll(server: McpServer, config: Config): void {
 	registerContactGroupUpdate(server, config);
 	registerContactGroupDelete(server, config);
 	registerContactGroupMembersModify(server, config);
+	registerOtherContactsList(server, config);
+	registerOtherContactsSearch(server, config);
+	registerOtherContactCopyToContacts(server, config);
 }
