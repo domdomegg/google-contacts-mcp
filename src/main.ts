@@ -73,6 +73,8 @@ const transport = process.env.MCP_TRANSPORT || 'stdio';
 		app.use(express.urlencoded({extended: true, limit: '10mb'}));
 
 		const port = parseInt(process.env.PORT || '3000', 10);
+		// Only listen on loopback by default; set HOST=0.0.0.0 to expose the server (e.g. in a container)
+		const host = process.env.HOST || '127.0.0.1';
 		const baseUrl = process.env.MCP_BASE_URL || `http://localhost:${port}`;
 		const allowedRedirectUris = parseAllowedRedirectUris(process.env.ALLOWED_REDIRECT_URIS);
 
@@ -273,7 +275,7 @@ const transport = process.env.MCP_TRANSPORT || 'stdio';
 			}
 		});
 
-		const httpServer = app.listen(port, () => {
+		const httpServer = app.listen(port, host, () => {
 			console.error(`Google Contacts MCP server running on ${baseUrl}/mcp`);
 		});
 
