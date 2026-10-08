@@ -155,6 +155,44 @@ const outputSchema = z.object({
 	})).optional(),
 }).passthrough();
 
+type ApiEntry = Record<string, unknown> & {metadata?: {primary?: boolean}};
+
+// Read-only or derived name fields that must not be sent back, otherwise they can override the structured fields we set
+const DERIVED_NAME_FIELDS = ['metadata', 'displayName', 'displayNameLastFirst', 'unstructuredName'];
+
+function withoutKeys(entry: ApiEntry, keys: string[]): Record<string, unknown> {
+	return Object.fromEntries(Object.entries(entry).filter(([key]) => !keys.includes(key)));
+}
+
+// The People API replaces every field listed in updatePersonFields, so merge partial changes into the current values
+function mergeNames(current: ApiEntry[] | undefined, givenName: string | undefined, familyName: string | undefined): Record<string, unknown>[] {
+	const existing = current?.[0] ? withoutKeys(current[0], DERIVED_NAME_FIELDS) : {};
+	return [{
+		...existing,
+		...(givenName !== undefined && {givenName}),
+		...(familyName !== undefined && {familyName}),
+	}];
+}
+
+function mergeOrganizations(current: ApiEntry[] | undefined, organization: string | undefined, jobTitle: string | undefined): Record<string, unknown>[] {
+	const entries = (current ?? []).map((entry) => ({primary: entry.metadata?.primary === true, value: withoutKeys(entry, ['metadata'])}));
+	const updates = {
+		...(organization !== undefined && {name: organization}),
+		...(jobTitle !== undefined && {title: jobTitle}),
+	};
+
+	if (entries.length === 0) {
+		return [updates];
+	}
+
+	const primaryIndex = Math.max(0, entries.findIndex((entry) => entry.primary));
+	return entries.map((entry, i) => (i === primaryIndex ? {...entry.value, ...updates} : entry.value));
+}
+
+function isEtagMismatch(error: unknown): boolean {
+	return error instanceof Error && error.message.startsWith('People API error: 400') && (error.message.includes('FAILED_PRECONDITION') || /etag/i.test(error.message));
+}
+
 export function registerContactUpdate(server: McpServer, config: Config): void {
 	server.registerTool(
 		'contact_update',
@@ -173,8 +211,15 @@ export function registerContactUpdate(server: McpServer, config: Config): void {
 			const person: Record<string, unknown> = {etag};
 			const updatePersonFields: string[] = [];
 
-			if (givenName !== undefined || familyName !== undefined) {
-				person.names = [{givenName, familyName}];
+			const updatesNames = givenName !== undefined || familyName !== undefined;
+			const updatesOrganizations = organization !== undefined || jobTitle !== undefined;
+			let current: {names?: ApiEntry[]; organizations?: ApiEntry[]} = {};
+			if (updatesNames || updatesOrganizations) {
+				current = await makePeopleApiCall('GET', `/${resourceName}?personFields=names,organizations`, config.token) as typeof current;
+			}
+
+			if (updatesNames) {
+				person.names = mergeNames(current.names, givenName, familyName);
 				updatePersonFields.push('names');
 			}
 
@@ -188,8 +233,8 @@ export function registerContactUpdate(server: McpServer, config: Config): void {
 				updatePersonFields.push('phoneNumbers');
 			}
 
-			if (organization !== undefined || jobTitle !== undefined) {
-				person.organizations = [{name: organization, title: jobTitle}];
+			if (updatesOrganizations) {
+				person.organizations = mergeOrganizations(current.organizations, organization, jobTitle);
 				updatePersonFields.push('organizations');
 			}
 
@@ -256,7 +301,17 @@ export function registerContactUpdate(server: McpServer, config: Config): void {
 			const params = new URLSearchParams();
 			params.set('updatePersonFields', updatePersonFields.join(','));
 
-			const result = await makePeopleApiCall('PATCH', `/${resourceName}:updateContact?${params.toString()}`, config.token, person);
+			let result: unknown;
+			try {
+				result = await makePeopleApiCall('PATCH', `/${resourceName}:updateContact?${params.toString()}`, config.token, person);
+			} catch (error) {
+				if (isEtagMismatch(error)) {
+					throw new Error(`Contact ${resourceName} changed since you read it (etag mismatch). Re-read it with contact_get and retry with the new etag.`, {cause: error});
+				}
+
+				throw error;
+			}
+
 			return jsonResult(outputSchema.parse(result));
 		},
 	);
