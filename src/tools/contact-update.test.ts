@@ -53,7 +53,7 @@ describe('contact_update', () => {
 		const result = await callTool({resourceName: 'people/c1', etag: 'etag-1', jobTitle: 'CTO'});
 
 		expect(result.isError).toBeFalsy();
-		expect(calls[0]).toMatchObject({method: 'GET', url: 'https://people.googleapis.com/v1/people/c1?personFields=names,organizations'});
+		expect(calls[0]).toMatchObject({method: 'GET', url: 'https://people.googleapis.com/v1/people/c1?personFields=names,organizations&sources=READ_SOURCE_TYPE_CONTACT'});
 		expect(calls[1]).toEqual({
 			method: 'PATCH',
 			url: 'https://people.googleapis.com/v1/people/c1:updateContact?updatePersonFields=organizations',
@@ -103,6 +103,42 @@ describe('contact_update', () => {
 				{name: 'NewCo', title: 'CEO'},
 			],
 		});
+	});
+
+	it('writes back only contact-sourced organizations, not ones from a linked profile', async () => {
+		const calls = stubFetch(
+			jsonResponse({
+				resourceName: 'people/c1',
+				etag: 'etag-1',
+				organizations: [
+					{metadata: {source: {type: 'PROFILE'}}, name: 'Google LLC', title: 'Profile title'},
+					{metadata: {primary: true, source: {type: 'CONTACT'}}, name: 'Acme', title: 'Engineer'},
+				],
+			}),
+			jsonResponse(updated),
+		);
+
+		await callTool({resourceName: 'people/c1', etag: 'etag-1', jobTitle: 'CTO'});
+
+		expect(calls[1]?.body).toEqual({etag: 'etag-1', organizations: [{name: 'Acme', title: 'CTO'}]});
+	});
+
+	it('merges into the contact-sourced name, not one from a linked profile', async () => {
+		const calls = stubFetch(
+			jsonResponse({
+				resourceName: 'people/c1',
+				etag: 'etag-1',
+				names: [
+					{metadata: {primary: true, source: {type: 'PROFILE'}}, givenName: 'Jonathan', familyName: 'Profile-Smith'},
+					{metadata: {source: {type: 'CONTACT'}}, givenName: 'Jon', familyName: 'Smith'},
+				],
+			}),
+			jsonResponse(updated),
+		);
+
+		await callTool({resourceName: 'people/c1', etag: 'etag-1', givenName: 'John'});
+
+		expect(calls[1]?.body).toEqual({etag: 'etag-1', names: [{givenName: 'John', familyName: 'Smith'}]});
 	});
 
 	it('creates an organization when the contact has none', async () => {

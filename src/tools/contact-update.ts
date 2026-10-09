@@ -155,10 +155,15 @@ const outputSchema = z.object({
 	})).optional(),
 }).passthrough();
 
-type ApiEntry = Record<string, unknown> & {metadata?: {primary?: boolean}};
+type ApiEntry = Record<string, unknown> & {metadata?: {primary?: boolean; source?: {type?: string}}};
 
 // Read-only or derived name fields that must not be sent back, otherwise they can override the structured fields we set
 const DERIVED_NAME_FIELDS = ['metadata', 'displayName', 'displayNameLastFirst', 'unstructuredName'];
+
+// Only the contact's own data may be written back: a linked Google or Workspace profile can contribute names and organizations too
+function contactSourced(entries: ApiEntry[] | undefined): ApiEntry[] {
+	return (entries ?? []).filter((entry) => !entry.metadata?.source?.type || entry.metadata.source.type === 'CONTACT');
+}
 
 function withoutKeys(entry: ApiEntry, keys: string[]): Record<string, unknown> {
 	return Object.fromEntries(Object.entries(entry).filter(([key]) => !keys.includes(key)));
@@ -166,7 +171,8 @@ function withoutKeys(entry: ApiEntry, keys: string[]): Record<string, unknown> {
 
 // The People API replaces every field listed in updatePersonFields, so merge partial changes into the current values
 function mergeNames(current: ApiEntry[] | undefined, givenName: string | undefined, familyName: string | undefined): Record<string, unknown>[] {
-	const existing = current?.[0] ? withoutKeys(current[0], DERIVED_NAME_FIELDS) : {};
+	const [currentName] = contactSourced(current);
+	const existing = currentName ? withoutKeys(currentName, DERIVED_NAME_FIELDS) : {};
 	return [{
 		...existing,
 		...(givenName !== undefined && {givenName}),
@@ -175,7 +181,7 @@ function mergeNames(current: ApiEntry[] | undefined, givenName: string | undefin
 }
 
 function mergeOrganizations(current: ApiEntry[] | undefined, organization: string | undefined, jobTitle: string | undefined): Record<string, unknown>[] {
-	const entries = (current ?? []).map((entry) => ({primary: entry.metadata?.primary === true, value: withoutKeys(entry, ['metadata'])}));
+	const entries = contactSourced(current).map((entry) => ({primary: entry.metadata?.primary === true, value: withoutKeys(entry, ['metadata'])}));
 	const updates = {
 		...(organization !== undefined && {name: organization}),
 		...(jobTitle !== undefined && {title: jobTitle}),
@@ -215,7 +221,7 @@ export function registerContactUpdate(server: McpServer, config: Config): void {
 			const updatesOrganizations = organization !== undefined || jobTitle !== undefined;
 			let current: {names?: ApiEntry[]; organizations?: ApiEntry[]} = {};
 			if (updatesNames || updatesOrganizations) {
-				current = await makePeopleApiCall('GET', `/${resourceName}?personFields=names,organizations`, config.token) as typeof current;
+				current = await makePeopleApiCall('GET', `/${resourceName}?personFields=names,organizations&sources=READ_SOURCE_TYPE_CONTACT`, config.token) as typeof current;
 			}
 
 			if (updatesNames) {
