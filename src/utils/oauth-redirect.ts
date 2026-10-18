@@ -1,35 +1,30 @@
 /**
- * Redirect URI checks for the OAuth proxy in HTTP mode.
- *
- * /token injects our client secret into any code it's given, so whoever receives the
- * authorization code from /callback can redeem it for the user's Google tokens. We must
- * therefore only forward codes to redirect URIs the user actually intends to authorize.
- *
- * Dynamic client registration is open (anyone can register any redirect URI), so registered
- * URIs prove nothing. Instead:
- * - Loopback, native app (custom scheme) and ALLOWED_REDIRECT_URIS (default: well-known hosted
- *   clients) are trusted, as a remote attacker can't receive redirects to them.
- * - Anything else gets an interstitial asking the user to confirm where to send their access.
- *
- * The check happens in /callback (not just /authorize) because our state parameter can be
- * hand-crafted by an attacker who builds the Google authorization URL themselves.
+ * Whoever receives a code from /callback can redeem it at /token, so only forward codes to
+ * redirect URIs a remote attacker can't receive; ask the user to confirm anything else.
+ * Checked in /callback, as an attacker can craft the state themselves.
  */
 
+// A trailing * matches any suffix
 const DEFAULT_ALLOWED_REDIRECT_URIS = [
 	'https://claude.ai/api/mcp/auth_callback',
 	'https://claude.com/api/mcp/auth_callback',
 	'https://chatgpt.com/connector_platform_oauth_redirect',
+	'https://chatgpt.com/connector/oauth/*',
+	'https://vscode.dev/redirect',
+	'https://vscode.dev/redirect/',
+	'https://insiders.vscode.dev/redirect',
+	'https://insiders.vscode.dev/redirect/',
+	'https://www.cursor.com/agents/mcp/oauth/callback',
 ];
 
 const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]']);
 
-// Schemes that browsers handle themselves rather than handing off to a native app
 // eslint-disable-next-line no-script-url
 const BLOCKED_SCHEMES = new Set(['javascript:', 'data:', 'file:', 'blob:', 'about:', 'vbscript:', 'filesystem:']);
 
 export type RedirectUriVerdict = 'allowed' | 'needs_consent' | 'invalid';
 
-// ALLOWED_REDIRECT_URIS replaces the defaults (set it to '' to trust none), so include them if you still want them
+// Replaces the defaults if set
 export function parseAllowedRedirectUris(env: string | undefined): string[] {
 	if (env === undefined) {
 		return DEFAULT_ALLOWED_REDIRECT_URIS;
@@ -50,19 +45,14 @@ export function checkRedirectUri(redirectUri: string, allowedRedirectUris: strin
 		return 'invalid';
 	}
 
-	if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+	// Native app schemes and loopback only reach the user's own machine
+	if ((url.protocol !== 'http:' && url.protocol !== 'https:') || LOOPBACK_HOSTNAMES.has(url.hostname)) {
 		return 'allowed';
 	}
 
-	if (LOOPBACK_HOSTNAMES.has(url.hostname)) {
-		return 'allowed';
-	}
-
-	if (allowedRedirectUris.includes(`${url.origin}${url.pathname}`)) {
-		return 'allowed';
-	}
-
-	return 'needs_consent';
+	const target = `${url.origin}${url.pathname}`;
+	const isAllowed = allowedRedirectUris.some((allowed) => (allowed.endsWith('*') ? target.startsWith(allowed.slice(0, -1)) : target === allowed));
+	return isAllowed ? 'allowed' : 'needs_consent';
 }
 
 export function buildClientRedirect(redirectUri: string, params: Record<string, string>): string {
@@ -80,7 +70,6 @@ function escapeHtml(s: string): string {
 	return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
-// Matches the look of mcp-auth-wrapper and mcp-aggregator pages
 export function renderConsentPage(opts: {
 	serverName: string;
 	redirectUri: string;
