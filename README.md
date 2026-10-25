@@ -40,6 +40,8 @@ npm start
 
 The server runs on `http://localhost:3000` by default. Change with `PORT=3001`.
 
+By default the server only listens on `127.0.0.1`. To accept connections from other machines (e.g. when running in a container), set `HOST=0.0.0.0`.
+
 ### 3. Add to your MCP client
 
 With the server running, follow the instructions on [install-mcp](https://adamjones.me/install-mcp/?url=http://localhost:3000/mcp), which generates the right config for your MCP client (Claude Code, Claude Desktop, Cursor, Cline, VS Code, and more).
