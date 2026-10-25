@@ -81,6 +81,9 @@ The server holds no tokens or state - it just proxies OAuth to Google.
 | `contact_group_update` | Rename a contact group |
 | `contact_group_delete` | Permanently delete a contact group |
 | `contact_group_members_modify` | Add or remove contacts from a contact group |
+| `other_contacts_list` | List "other contacts" (people you've interacted with but not saved) |
+| `other_contacts_search` | Search "other contacts" by name, email, or phone |
+| `other_contact_copy_to_contacts` | Save an "other contact" as a regular contact |
 
 ## Contributing
 
