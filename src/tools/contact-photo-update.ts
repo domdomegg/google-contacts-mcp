@@ -26,7 +26,7 @@ export function registerContactPhotoUpdate(server: McpServer, config: Config): v
 		'contact_photo_update',
 		{
 			title: 'Update contact photo',
-			description: 'Set (or replace) the photo for a contact. Provide the image as base64-encoded JPEG or PNG bytes.',
+			description: 'Set (or replace) the photo for a contact. Provide the image as base64-encoded JPEG or PNG bytes. Returns the updated contact with its new photo URL and etag.',
 			inputSchema,
 			outputSchema,
 			annotations: {
@@ -36,7 +36,11 @@ export function registerContactPhotoUpdate(server: McpServer, config: Config): v
 			},
 		},
 		async ({resourceName, photoBytes}) => {
-			const result = await makePeopleApiCall('PATCH', `/${resourceName}:updateContactPhoto`, config.token, {photoBytes});
+			const result = await makePeopleApiCall('PATCH', `/${resourceName}:updateContactPhoto`, config.token, {
+				photoBytes,
+				// Without personFields, Google returns an empty response
+				personFields: 'photos',
+			});
 			return jsonResult(outputSchema.parse(result));
 		},
 	);
